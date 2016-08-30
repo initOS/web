@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data noupdate="0">
+        <record id="group_video_help_manager" model="res.groups">
+            <field name="name">Video Help Manager</field>
+        </record>
+    </data>
+</openerp>

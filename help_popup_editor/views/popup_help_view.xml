@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+        <template id="assets_backend"
+                  name="help_popup_editor assets"
+                  inherit_id="web.assets_backend">
+            <xpath expr="." position="inside">
+                <script type="text/javascript"
+                        src="/help_popup_editor/static/src/js/popup_help.js"/>
+            </xpath>
+        </template>
+
+        <record id="view_help_popup_editor_add_video"
+                model="ir.ui.view">
+            <field name="name">help.popup.editor.add.video</field>
+            <field name="model">ir.actions.act_window</field>
+            <field name="arch" type="xml">
+                <form string="Add Video">
+                    <group>
+                        <field name="enduser_help"/>
+                        <field name="advanced_help"/>
+                    </group>
+                    <button name="save_button"
+                            string="Speichern"
+                            type="object"
+                            class="oe_highlight"/>
+                    <button name="cancel_button"
+                            string="Abbrechen"
+                            special="cancel"
+                            class="oe_link"/>
+                </form>
+            </field>
+        </record>
+
+    </data>
+</openerp>

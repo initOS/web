@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <report id="report_help_popup_editor"
+                model="ir.actions.act_window"
+                string="Contextual Help"
+                name="help_popup_editor.tpl_help_editor"
+                report_type="qweb-html"/>
+    </data>
+</openerp>

@@ -19,7 +19,6 @@
                 <form string="Add Video">
                     <group>
                         <field name="enduser_help"/>
-                        <field name="advanced_help"/>
                     </group>
                     <button name="save_button"
                             string="Speichern"

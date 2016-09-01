@@ -11,7 +11,7 @@
 Help Popup Editor
 =================
 Extension for Help Popup Module that adds a new Button next to the help button from the original module.
-This new button is only visible for users of the group "Video Help Manager".
+This new button is only visible for users of the group "Help Manager".
 Clicking this Button opens a Popup Dialog with editing panels for the fields introduced by Help Popup module.
 
 The "End User Help" field supports HTML but the Tags being allowed is are set in "models/cleaner.py".

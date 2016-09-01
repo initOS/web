@@ -38,6 +38,33 @@ openerp.help_popup_editor = function(instance, local) {
                 });
                 return true;
             });
+
+            self.$el.find('span.view_help').each(function () {
+                var $elem = $(this);
+                if ($elem.data('click-init')) {
+                    $elem.off('click');
+                    $elem.data('click-init', false);
+                    $elem.data('click-init_editor', false);
+                }
+                if ($elem.data('click-init_editor')) {
+                    return true;
+                }
+                $elem.data('click-init_editor', true);
+                if (self.action.id == undefined || (self.action.advanced_help == '' && self.action.enduser_help == '')) {
+                    self.$el.find('span.view_help').hide()
+                }
+                $elem.on('click', function(e) {
+                    var params = 'height=650, width=800, location=no, ';
+                    params += 'resizable=yes, menubar=yes';
+                    path = self.action.id;
+                    my_window = window.open('/report/html/help_popup_editor.tpl_help_editor/' + path, 'Help', params);
+                    // allows to back to the window if opened previoulsy
+                    setTimeout('my_window.focus()', 1);
+                });
+
+                return true;
+
+            });
             return res;
         },
     });

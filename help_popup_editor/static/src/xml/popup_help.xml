@@ -3,8 +3,15 @@
     <t t-name="ViewManagerAction" t-extend="ViewManagerAction">
         <t t-jquery="h2.oe_view_title" t-operation="before">
             <span style="display: none"
-                  class="oe_button view_help_customization"
-                  title="Video hinzufügen">+
+                  class=" view_help_customization"
+                  title="Video hinzufügen">
+                <img t-att-src='_s + "/web/static/src/img/icons/gtk-edit.png"'/>
+            </span>
+        </t>
+        <t t-jquery=".view_help" t-operation="replace">
+            <span class=" view_help"
+                  title="Hilfe anzeigen">
+                <img t-att-src='_s + "/web/static/src/img/icons/gtk-info.png"'/>
             </span>
         </t>
     </t>

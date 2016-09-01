@@ -11,21 +11,21 @@
             </xpath>
         </template>
 
-        <record id="view_help_popup_editor_add_video"
+        <record id="view_help_popup_editor_edit"
                 model="ir.ui.view">
-            <field name="name">help.popup.editor.add.video</field>
+            <field name="name">help.popup.editor.edit</field>
             <field name="model">ir.actions.act_window</field>
             <field name="arch" type="xml">
-                <form string="Add Video">
+                <form string="Edit Help">
                     <group>
                         <field name="enduser_help"/>
                     </group>
                     <button name="save_button"
-                            string="Speichern"
+                            string="Save"
                             type="object"
                             class="oe_highlight"/>
                     <button name="cancel_button"
-                            string="Abbrechen"
+                            string="Cancel"
                             special="cancel"
                             class="oe_link"/>
                 </form>

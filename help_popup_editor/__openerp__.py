@@ -14,7 +14,7 @@ Extension for Help Popup Module that adds a new Button next to the help button f
 This new button is only visible for users of the group "Help Manager".
 Clicking this Button opens a Popup Dialog with editing panels for the fields introduced by Help Popup module.
 
-The "End User Help" field supports HTML but the Tags being allowed is are set in "models/cleaner.py".
+The "End User Help" field supports HTML but the Tags being allowed are set in "models/cleaner.py".
 """,
     'website': 'http://www.initos.com',
     'license': 'AGPL-3',

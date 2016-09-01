@@ -5,7 +5,7 @@
         <template id="tpl_help_editor">
             <t t-foreach="docs" t-as="o">
                 <div class="page">
-                    <h3 t-if="o.enduser_help">Benutzerhilfe</h3>
+                    <h3 t-if="o.enduser_help">User Help</h3>
                     <div t-raw="o.enduser_help"/>
                 </div>
             </t>

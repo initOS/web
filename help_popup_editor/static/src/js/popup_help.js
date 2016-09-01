@@ -19,7 +19,7 @@ openerp.help_popup_editor = function(instance, local) {
                     var id = option.data('id');
                     var action = { name : option.text() }
                     action = _.extend({
-                        context: {'form_view_ref': 'help_popup_editor.view_help_popup_editor_add_video'},
+                        context: {'form_view_ref': 'help_popup_editor.view_help_popup_editor_edit'},
                         res_model : 'ir.actions.act_window',
                         res_id : self.action.id,
                         type : 'ir.actions.act_window',
@@ -31,7 +31,7 @@ openerp.help_popup_editor = function(instance, local) {
                     self.do_action(action);
                 });
                 var Users = new openerp.web.Model('res.users');
-                Users.call('has_group', ['help_popup_editor.group_video_help_manager']).done(function(set_visible) {
+                Users.call('has_group', ['help_popup_editor.group_help_manager']).done(function(set_visible) {
                     if (set_visible) {
                         $elem.show();
                     }

@@ -4,13 +4,13 @@
         <t t-jquery="h2.oe_view_title" t-operation="before">
             <span style="display: none"
                   class=" view_help_customization"
-                  title="Video hinzufügen">
+                  title="Edit user help">
                 <img t-att-src='_s + "/web/static/src/img/icons/gtk-edit.png"'/>
             </span>
         </t>
         <t t-jquery=".view_help" t-operation="replace">
             <span class=" view_help"
-                  title="Hilfe anzeigen">
+                  title="Show user help">
                 <img t-att-src='_s + "/web/static/src/img/icons/gtk-info.png"'/>
             </span>
         </t>

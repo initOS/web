@@ -19,6 +19,9 @@ openerp.web_widget_float_formula = function (instance) {
                 if (!this.fields.hasOwnProperty(f)) { continue; }
                 f = this.fields[f];
                 if (f.hasOwnProperty('_formula_text')){
+                    if (f._formula_text) {
+                        f.$el.find('input').val(f._formula_text)
+                    }
                     currentval = f.$('input').attr('value')
                     if (typeof currentval != 'undefined'){
                         formula = f._get_valid_expression(currentval);

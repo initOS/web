@@ -55,6 +55,9 @@ odoo.define('web_advanced_search_x2x.search_filters', function (require) {
          * Add x2x widget after rendering.
          */
         renderElement: function() {
+        //for the name none we don't need to render new element
+            if(this.x2x_widget_name() == 'none')
+            return;
             var result = this._super.apply(this, arguments);
             if (this.x2x_widget_name()) {
                 this.x2x_field().appendTo(this.$el);
@@ -148,6 +151,11 @@ odoo.define('web_advanced_search_x2x.search_filters', function (require) {
                     return "many2one";
                 case "domain":
                     return "char_domain";
+                case "∃":
+                case "∄":
+                case "not ilike":
+                case "ilike":
+                    return 'none';
             }
         },
 

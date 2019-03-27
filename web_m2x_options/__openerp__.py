@@ -2,7 +2,7 @@
 
 {
     "name": 'web_m2x_options',
-    "version": "7.0.1.0.0",
+    "version": "7.0.1.1.0",
     "description": """
 =====================================================
 Add new options for many2one and many2manytags field:

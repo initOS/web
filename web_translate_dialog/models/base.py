@@ -1,37 +1,30 @@
 # Copyright 2019 Camptocamp SA
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl)
-from odoo import models
+from odoo import api, models
 
 
-class BaseModel(models.BaseModel):
+class IrTranslation(models.Model):
+    _inherit = "ir.translation"
 
-    _inherit = "base"
-
-    def get_field_translations(self, field_names):
-        """Get only the existing translations for specified field
-
-        :param field_name: Name of the field
-        :return: dict of
-            {self.id: {'lang_code': {'field_name':ir.translation,value}}
-        """
-        read_res = self.with_context(lang="en_US").read(fields=field_names)
-        res = {}
-        for rec in read_res:
-            rec_id = rec.get("id")
-            del rec["id"]
-            res[rec_id] = {"en_US": rec}
-        for rec_id, values in res.items():
-            for name in field_names:
-
-                tr_read_res = self.env["ir.translation"].search_read(
-                    [
-                        ("name", "=", "{},{}".format(self._name, name)),
-                        ("res_id", "=", rec_id),
-                        ("lang", "!=", "en_US"),
-                    ]
-                )
-                for tr_res in tr_read_res:
-                    if not tr_res.get("lang") in values:
-                        values[tr_res.get("lang")] = {}
-                    values[tr_res.get("lang")][name] = tr_res.get("value")
+    @api.model
+    def translate_fields(self, model, id, field=None):
+        """ Open a view for translating the field(s) of the record (model, id). """
+        main_lang = "en_US"
+        record = self.env[model].with_context(lang=main_lang).browse(id)
+        context = {}
+        if field and isinstance(field, list):
+            for fieldname in field:
+                res = super(IrTranslation, self).translate_fields(model, id, fieldname)
+                fld = record._fields[fieldname]
+                if not fld.related:
+                    context.update(
+                        {
+                            "search_default_%s"
+                            % (fld.name): "%s,%s"
+                            % (fld.model_name, fld.name),
+                        }
+                    )
+            res["context"].update(context)
+        else:
+            res = super(IrTranslation, self).translate_fields(model, id, field)
         return res

@@ -1,5 +1,6 @@
 # Copyright 2012 Guewen Baconnier (Camptocamp SA)
 # Copyright 2016 Antonio Espinosa <antonio.espinosa@tecnativa.com>
+# Copyright 2016 Dhara Solanki <dhara.solanki@initos.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 {
@@ -15,7 +16,9 @@
     "license": "AGPL-3",
     "application": False,
     "installable": True,
-    "depends": ["web", "product"],
+    "depends": ["web"],
     "data": ["views/res_lang.xml", "views/web_translate.xml"],
-    "qweb": ["static/src/xml/base.xml"],
+    "qweb": [
+        "static/src/xml/translation_dialog.xml",
+    ],
 }

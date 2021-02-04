@@ -1,5 +1,6 @@
 /* Copyright 2012 Guewen Baconnier (Camptocamp SA)
    Copyright 2016 Antonio Espinosa <antonio.espinosa@tecnativa.com>
+   Copyright 2021 Dhara Solanki <dhara.solanki@initos.com>
  * License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). */
 
 odoo.define("web_translate_dialog.translate_dialog", function (require) {
@@ -7,51 +8,43 @@ odoo.define("web_translate_dialog.translate_dialog", function (require) {
 
     var core = require("web.core");
     var BasicController = require("web.BasicController");
-    var data = require("web.data");
-    var Context = require("web.Context");
-    var concurrency = require("web.concurrency");
     var Dialog = require("web.Dialog");
-    var session = require("web.session");
-    var rpc = require("web.rpc");
     var FormController = require("web.FormController");
     var _t = core._t;
-    var QWeb = core.qweb;
-    var Mutex = concurrency.Mutex;
+    var TranslationDialog = require("web.TranslationDialog");
 
-    var TranslateDialog = Dialog.extend({
-        template: "TranslateDialog",
+    TranslationDialog.include({
         init: function (parent, options) {
+            var field_names = null;
             var title_string = _t("Translate fields: /");
-            var single_field = false;
-            if (options.field) {
-                var field_names = [options.field.fieldName];
-                single_field = true;
+            if (options.fieldName) {
+                field_names = options.fieldName;
                 title_string = title_string.replace("/", field_names);
             } else {
                 field_names = this.get_translatable_fields(parent);
+                options.domain.push(["res_id", "=", options.res_id]);
             }
-            this._super(parent, {title: title_string, size: "x-large"});
-            this.view_language = session.user_context.lang;
-            this.view = parent;
-            this.view_type = parent.viewType || "";
-            this.translatable_fields = field_names;
-            this.res_id = options.res_id;
-            this.single_field = single_field;
-            this.languages = null;
-            this.languages_loaded = $.Deferred();
-            this.lang_data = new data.DataSetSearch(this, "res.lang", parent.context, [
-                ["active", "=", "1"],
-            ]);
-            this.lang_data.set_sort(["tr_sequence asc", "id asc"]);
-            this.lang_data.read_slice(["code", "name"]).then(this.on_languages_loaded);
-        },
-        willStart: function () {
-            var self = this;
-            return this._super.apply(this, arguments).then(function () {
-                if (self.size === "x-large") {
-                    self.$modal.find(".modal-dialog").addClass("modal-xl");
+            for (var i in field_names) {
+                var field_key = _.str.sprintf("search%s", field_names[i]);
+                if (options[field_key]) {
+                    options.domain.push("|");
+                    options.domain.push(["name", "=", options[field_key]]);
                 }
-            });
+            }
+            this.translatable_fields = field_names;
+            this.view = parent;
+            this._super(
+                parent,
+                _.extend(
+                    {
+                        size: "x-large",
+                        title: title_string,
+                        dataPointID: parent.initialState.id,
+                        fieldName: field_names,
+                    },
+                    options
+                )
+            );
         },
         get_translatable_fields: function (parent) {
             var field_list = [];
@@ -67,37 +60,6 @@ odoo.define("web_translate_dialog.translate_dialog", function (require) {
                 }
             });
             return field_list;
-        },
-        on_languages_loaded: function (langs) {
-            this.languages = langs;
-            this.languages_loaded.resolve();
-        },
-        open: function () {
-            // The template needs the languages
-            return $.when(this.languages_loaded).then($.proxy(this._super, this));
-        },
-        start: function () {
-            var self = this;
-            this.$(".oe_translation_field").change(function () {
-                $(this).toggleClass(
-                    "touched",
-                    $(this).val() !== $(this).attr("data-value")
-                );
-            });
-            this.$footer.html(QWeb.render("TranslateDialog.buttons"));
-            this.$footer
-                .find(".oe_form_translate_dialog_save_button")
-                .click(function () {
-                    self.on_button_save();
-                    self.on_button_close();
-                });
-            this.$footer
-                .find(".oe_form_translate_dialog_cancel_button")
-                .click(function () {
-                    self.on_button_close();
-                });
-
-            this.do_load_fields_values();
         },
         resize_textareas: function () {
             var textareas = this.$("textarea.oe_translation_field");
@@ -174,122 +136,243 @@ odoo.define("web_translate_dialog.translate_dialog", function (require) {
                 });
             });
         },
-        set_fields_values: function (lang, tr_value) {
-            _.each(
-                tr_value,
-                function (translation, field) {
-                    this.$('.oe_translation_field[name="' + lang + "-" + field + '"]')
-                        .val(translation || "")
-                        .attr("data-value", translation || "");
-                },
-                this
-            );
-            this.initialize_html_fields(lang);
-        },
-        do_load_fields_values: function () {
-            var self = this,
-                deferred = [];
 
-            this.$(".oe_translation_field").val("").removeClass("touched");
-
-            var def = $.Deferred();
-            deferred.push(def);
-            rpc.query({
-                model: this.view.modelName,
-                method: "get_field_translations",
-                args: [[this.res_id]],
-                kwargs: {
-                    field_names: this.translatable_fields,
-                },
-            }).then(function (res) {
-                if (res[self.res_id]) {
-                    _.each(res[self.res_id], function (translation, lang) {
-                        self.set_fields_values(lang, translation);
+        willStart: function () {
+            return Promise.all([
+                this._super(),
+                this._loadLanguages().then((l) => {
+                    this.languages = l;
+                    return this._loadTranslations().then((t) => {
+                        this.translations = t;
                     });
-                    self.resize_textareas();
-                    self.set_maxlength();
-                    def.resolve();
-                }
-            });
-
-            return deferred;
-        },
-        on_button_save: function () {
-            var translations = {},
-                self = this,
-                save_mutex = new Mutex();
-            this.$(".oe_translation_field.touched").each(function () {
-                var field = $(this).attr("name").split("-");
-                if (!translations[field[0]]) {
-                    translations[field[0]] = {};
-                }
-                translations[field[0]][field[1]] = $(this).val();
-            });
-            _.each(translations, function (text, code) {
-                save_mutex.exec(function () {
-                    var done = new $.Deferred();
-
-                    var context = new Context(session.user_context, {lang: code});
-                    rpc.query({
-                        model: self.view.modelName,
-                        method: "write",
-                        args: [self.res_id, text],
-                        kwargs: {context: context.eval()},
-                    }).then(function () {
-                        done.resolve();
-                    });
-                    if (code === self.view_language) {
-                        _.each(text, function (value, key) {
-                            var view_elem = self.view.$(":input[name='" + key + "']");
-                            view_elem.val(value).trigger("change");
-                        });
+                }),
+            ]).then(() => {
+                this.data = this.translations.map((term) => {
+                    const relatedLanguage = this.languages.find(
+                        (language) => language[0] === term.lang
+                    );
+                    if (!term.value && !this.showSrc) {
+                        term.value = term.src;
                     }
-                    return done;
+                    return {
+                        id: term.id,
+                        name: term.name.split(",")[1],
+                        lang: term.lang,
+                        langName: relatedLanguage[1],
+                        source: term.src,
+                        // We set the translation value coming from the database, except for the language
+                        // the user is currently utilizing. Then we set the translation value coming
+                        // from the value of the field in the form
+                        value:
+                            term.lang === this.currentInterfaceLanguage &&
+                            !this.showSrc &&
+                            !this.isComingFromTranslationAlert
+                                ? this.userLanguageValue
+                                : term.value || "",
+                    };
                 });
+                this.data.sort((left, right) =>
+                    left.langName < right.langName ||
+                    (left.langName === right.langName && left.source < right.source)
+                        ? -1
+                        : 1
+                );
             });
-            this.close();
         },
-        on_button_close: function () {
-            this.close();
+
+        _loadTranslations: function () {
+            const domain = [
+                ...this.domain,
+                ["lang", "in", this.languages.map((l) => l[0])],
+            ];
+            return this._rpc({
+                model: "ir.translation",
+                method: "search_read",
+                fields: ["lang", "src", "value", "name"],
+                domain: domain,
+            });
+        },
+
+        _onSave: function () {
+            // Overwrite this method to loop the fieldnames when
+            // modified the translation value of current ineterface.
+            var updatedTerm = {};
+            var updateFormViewField;
+
+            this.el.querySelectorAll("input[type=text],textarea").forEach((t) => {
+                var initialValue = this.data.find((d) => d.id == t.dataset.id);
+                if (initialValue.value !== t.value) {
+                    updatedTerm[t.dataset.id] = t.value;
+
+                    if (
+                        initialValue.lang === this.currentInterfaceLanguage &&
+                        !this.showSrc
+                    ) {
+                        // When the user has changed the term for the language he is
+                        // using in the interface, this change should be reflected
+                        // in the form view
+                        // partial translations being handled server side are
+                        // also ignored
+                        var changes = {};
+                        for (var i in this.fieldName) {
+                            if (initialValue.name === this.fieldName[i]) {
+                                changes[this.fieldName[i]] =
+                                    updatedTerm[initialValue.id];
+                            }
+                        }
+                        updateFormViewField = {
+                            dataPointID: this.dataPointID,
+                            changes: changes,
+                            doNotSetDirty: false,
+                        };
+                    }
+                }
+            });
+
+            // UpdatedTerm only contains the id and values of the terms that
+            // have been updated by the user
+            var saveUpdatedTermsProms = Object.keys(updatedTerm).map((id) => {
+                var writeTranslation = {
+                    model: "ir.translation",
+                    method: "write",
+                    context: this.context,
+                    args: [[parseInt(id, 10)], {value: updatedTerm[id]}],
+                };
+                return this._rpc(writeTranslation);
+            });
+            return Promise.all(saveUpdatedTermsProms).then(() => {
+                // We might have to update the value of the field on the form
+                // view that opened the translation dialog
+                if (updateFormViewField) {
+                    this.trigger_up("field_changed", updateFormViewField);
+                }
+            });
         },
     });
 
     FormController.include({
-        renderSidebar: function ($node) {
-            this._super($node);
-            if (this.sidebar) {
-                var item = this.is_action_enabled("edit") && {
-                    label: _t("Translate"),
-                    callback: this.on_button_translate,
-                };
-                if (item) {
-                    this.sidebar.items.other.push(item);
+        get_translatable_fields: function (parent) {
+            var field_list = [];
+            _.each(parent.renderer.state.fields, function (field, name) {
+                var related_readonly =
+                    typeof field.related !== "undefined" && field.readonly;
+                if (
+                    field.translate === true &&
+                    !related_readonly &&
+                    parent.renderer.state.getFieldNames().includes(name)
+                ) {
+                    field_list.push(name);
+                }
+            });
+            return field_list;
+        },
+
+        _getActionMenuItems: function (state) {
+            if (!this.hasActionMenus || this.mode === "edit") {
+                return null;
+            }
+            const props = this._super(...arguments);
+            const activeField = this.model.getActiveField(state);
+            const otherActionItems = [];
+            if (this.archiveEnabled && activeField in state.data) {
+                if (state.data[activeField]) {
+                    otherActionItems.push({
+                        description: _t("Archive"),
+                        callback: () => {
+                            Dialog.confirm(
+                                this,
+                                _t(
+                                    "Are you sure that you want to archive this record?"
+                                ),
+                                {
+                                    confirm_callback: () =>
+                                        this._toggleArchiveState(true),
+                                }
+                            );
+                        },
+                    });
+                } else {
+                    otherActionItems.push({
+                        description: _t("Unarchive"),
+                        callback: () => this._toggleArchiveState(false),
+                    });
                 }
             }
+            if (this.activeActions.create && this.activeActions.duplicate) {
+                otherActionItems.push({
+                    description: _t("Duplicate"),
+                    callback: () => this._onDuplicateRecord(this),
+                });
+            }
+            if (this.activeActions.delete) {
+                otherActionItems.push({
+                    description: _t("Delete"),
+                    callback: () => this._onDeleteRecord(this),
+                });
+            }
+            if (this.mode !== "edit") {
+                otherActionItems.push({
+                    description: _t("Translate"),
+                    callback: () => this._onButtonTranslate(state),
+                });
+            }
+            return Object.assign(props, {
+                items: Object.assign(this.toolbarActions, {other: otherActionItems}),
+            });
         },
-        on_button_translate: function () {
+
+        _onButtonTranslate: async function (state) {
             var self = this;
             $.when(this.has_been_loaded).then(function () {
-                self.open_translate_dialog(null, self.initialState.res_id);
+                self.open_translate_dialog(null, state.res_id);
             });
         },
     });
 
     BasicController.include({
-        open_translate_dialog: function (field, res_id) {
-            new TranslateDialog(this, {field: field, res_id: res_id}).open();
+        get_translatable_fields: function (parent) {
+            var field_list = [];
+            _.each(parent.renderer.state.fields, function (field, name) {
+                var related_readonly =
+                    typeof field.related !== "undefined" && field.readonly;
+                if (
+                    field.translate === true &&
+                    !related_readonly &&
+                    parent.renderer.state.getFieldNames().includes(name)
+                ) {
+                    field_list.push(name);
+                }
+            });
+            return field_list;
         },
-
-        _onTranslate: function (event) {
-            // The image next to the fields opens the translate dialog
-            var res_id = event.target.res_id
-                ? event.target.res_id
-                : event.target.state.res_id;
-            this.open_translate_dialog(event.data, res_id);
+        open_translate_dialog: async function (field, res_id) {
+            var record = this.model.get(this.initialState.id, {raw: true});
+            var field_names = this.get_translatable_fields(this);
+            var result = await this._rpc({
+                route: "/web/dataset/call_button",
+                params: {
+                    model: "ir.translation",
+                    method: "translate_fields",
+                    args: [record.model, res_id, field_names],
+                    kwargs: {context: record.getContext()},
+                },
+            });
+            var context = result.context;
+            var options = {};
+            for (var i in field_names) {
+                var field_key = _.str.sprintf("search%s", field_names[i]);
+                var search_key = _.str.sprintf("search_default_%s", field_names[i]);
+                options[field_key] = context[search_key];
+            }
+            options.dataPointID = record.id;
+            options.domain = [];
+            options.isText = result.context.translation_type === "text";
+            options.showSrc = result.context.translation_show_src;
+            options.isComingFromTranslationAlert = true;
+            options.translatable_fields = field_names;
+            options.res_id = res_id;
+            this.TranslationDialog = new TranslationDialog(this, options);
+            this.TranslationDialog.open();
         },
     });
-
-    return {
-        TranslateDialog: TranslateDialog,
-    };
 });

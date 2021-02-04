@@ -16,3 +16,7 @@
     padding-top: 5px;
     vertical-align: top;
 }
+
+.o_translation_dialog .o_language_current {
+    font-weight: normal;
+}

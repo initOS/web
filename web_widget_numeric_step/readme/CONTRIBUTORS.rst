@@ -6,3 +6,5 @@
 
   * Alexandre Díaz
   * Carlos Roca
+
+* Foram Shah <foram.shah@initos.com>

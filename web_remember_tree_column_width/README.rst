@@ -14,7 +14,7 @@ Web Remember Tree Column Width
     :target: http://www.gnu.org/licenses/lgpl-3.0-standalone.html
     :alt: License: LGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-OCA%2Fweb-lightgray.png?logo=github
-    :target: https://github.com/OCA/web/tree/15.0/web_remember_tree_column_width
+    :target: https://github.com/OCA/web/tree/16.0/web_remember_tree_column_width
     :alt: OCA/web
 .. |badge4| image:: https://img.shields.io/badge/weblate-Translate%20me-F47D42.png
     :target: https://translation.odoo-community.org/projects/web-15-0/web-15-0-web_remember_tree_column_width
@@ -55,6 +55,7 @@ Contributors
 
 * Francisco Javier Luna Vázquez <fluna@vauxoo.com>
 * Tomás Álvarez <tomas@vauxoo.com>
+* Dhara Solanki <dhara.solanki@initos.com>
 
 Other credits
 ~~~~~~~~~~~~~
@@ -85,6 +86,6 @@ Current `maintainers <https://odoo-community.org/page/maintainer-role>`__:
 
 |maintainer-frahikLV| |maintainer-luisg123v| 
 
-This module is part of the `OCA/web <https://github.com/OCA/web/tree/15.0/web_remember_tree_column_width>`_ project on GitHub.
+This module is part of the `OCA/web <https://github.com/OCA/web/tree/16.0/web_remember_tree_column_width>`_ project on GitHub.
 
 You are welcome to contribute. To learn how please visit https://odoo-community.org/page/Contribute.
